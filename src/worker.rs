@@ -251,7 +251,7 @@ pub fn process_file(
     // go through all buffers and try to acquire write lock. these calls block until no readers are
     // left. that way we know all threads have finished.
     for i in 0..buffer_count {
-        let _ = bufs[i].write().unwrap();
+        let _lock = bufs[i].write().unwrap();
     }
     Ok(())
 }
