@@ -27,6 +27,11 @@ struct CarInfo {
     status: Option<String>,
     status_date: Option<String>,
 
+    // Additional fields
+    fuel_type: Option<String>,
+    fuel_consumption: Option<String>,
+    weight: Option<String>,
+
     //Keep track of where the xml parser is
     #[serde(skip_serializing)]
     current_tag: CurrentTag,
@@ -48,6 +53,9 @@ impl CarInfo {
             registration_ended: None,
             status: None,
             status_date: None,
+            fuel_type: None,
+            fuel_consumption: None,
+            weight: None,
             current_tag: CurrentTag::None,
         }
     }
@@ -72,6 +80,11 @@ impl CarInfo {
             }
             CurrentTag::Status => self.status = e.unescape_and_decode(&xml).ok(),
             CurrentTag::StatusDate => self.status_date = e.unescape_and_decode(&xml).ok(),
+
+            // Additional fields
+            CurrentTag::FuelType => self.fuel_type = e.unescape_and_decode(&xml).ok(),
+            CurrentTag::FuelConsumption => self.fuel_consumption = e.unescape_and_decode(&xml).ok(),
+            CurrentTag::Weight => self.weight = e.unescape_and_decode(&xml).ok(),
         }
     }
 }
@@ -92,6 +105,11 @@ enum CurrentTag {
     RegistrationEnded,
     Status,
     StatusDate,
+
+    // Additional fields
+    FuelType,
+    FuelConsumption,
+    Weight,
 }
 
 fn parser_worker(b1: Arc<RwLock<Vec<u8>>>, b2: Arc<RwLock<Vec<u8>>>, logger: Sender<String>) {
@@ -129,6 +147,11 @@ fn parser_worker(b1: Arc<RwLock<Vec<u8>>>, b2: Arc<RwLock<Vec<u8>>>, logger: Sen
                 b"ns:KoeretoejRegistreringStatusDato" => {
                     cur_car.current_tag = CurrentTag::StatusDate
                 }
+                // Additional fields
+                b"ns:DrivkraftTypeNavn" => cur_car.current_tag = CurrentTag::FuelType,
+                b"ns:KoeretoejMotorKmPerLiter" => cur_car.current_tag = CurrentTag::FuelConsumption,
+                b"ns:KoeretoejOplysningEgenVaegt" => cur_car.current_tag = CurrentTag::Weight,
+
                 _ => {}
             },
             Ok(Event::End(ref tag)) => match tag.name() {
